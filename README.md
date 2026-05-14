@@ -1,5 +1,5 @@
 # SITTA - Sistem Informasi Pemesanan Bahan Ajar Universitas Terbuka
-# developed and prompted by Fadel Yulis Pratama - MiniMax M2.5 Free
+_developed and prompted by Fadel Yulis Pratama - MiniMax M2.5 Free_
 
 ## Deskripsi Proyek
 
