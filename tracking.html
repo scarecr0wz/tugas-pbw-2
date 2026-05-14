@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Pengiriman - SITTA UT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="dashboard-page">
+    <div id="app">
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                        <img src="assets/logo-ut.png" alt="Logo UT" class="logo">
+                        <span>SITTA UT</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container main-content">
+            <div class="section-header">
+                <h2>Tracking Pengiriman</h2>
+                <a href="index.html" class="btn-close" style="text-decoration: none;">Kembali</a>
+            </div>
+
+            <!-- Form Pencarian DO -->
+            <div class="search-container">
+                <p style="margin-top: 0; color: #666; font-size: 0.9rem;">
+                    Masukkan Nomor Delivery Order (DO) untuk melacak pengiriman bahan ajar Anda.
+                </p>
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        v-model="inputDO" 
+                        placeholder="Contoh: DO2023001234"
+                        @keyup.enter="cariDO"
+                        maxlength="20"
+                    >
+                    <button @click="cariDO" class="btn-search">Cari</button>
+                </div>
+                <p v-if="showError" class="error-message">
+                    Nomor DO tidak ditemukan. Silakan periksa kembali.
+                </p>
+            </div>
+
+            <!-- Loading State (v-if example) -->
+            <div v-if="isLoading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Mencari data...</p>
+            </div>
+
+            <!-- Hasil Tracking (v-show example) -->
+            <div v-show="showResult" class="tracking-result">
+                <!-- Header Result -->
+                <div class="result-header">
+                    <div>
+                        <h3 v-text="resultData.nama"></h3>
+                        <p>DO: <span v-text="resultData.noDO"></span></p>
+                    </div>
+                    <div class="status-badge" :class="getStatusClass(resultData.status)">
+                        {{ resultData.status }}
+                    </div>
+                </div>
+
+                <!-- Grid Info (one-way binding) -->
+                <div class="result-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <small>Ekspedisi</small>
+                            <strong v-text="resultData.ekspedisi"></strong>
+                        </div>
+                        <div class="info-item">
+                            <small>Tanggal Kirim</small>
+                            <strong v-text="resultData.tanggalKirim"></strong>
+                        </div>
+                        <div class="info-item">
+                            <small>Jenis Paket</small>
+                            <strong v-text="resultData.jenisPaket"></strong>
+                        </div>
+                        <div class="info-item">
+                            <small>Total Pembayaran</small>
+                            <strong>{{ formatRupiah(resultData.total) }}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Tracking (List Rendering) -->
+                    <h4 class="timeline-title">Detail Perjalanan</h4>
+                    <div class="timeline">
+                        <div 
+                            v-for="(track, index) in resultData.tracking" 
+                            :key="index"
+                            class="timeline-item"
+                            :class="{ 'active': index === 0 }"
+                        >
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <span class="timeline-time">{{ track.waktu }}</span>
+                                <p class="timeline-desc">{{ track.lokasi }}</p>
+                                <p class="timeline-status">{{ track.status }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Riwayat Pencarian (v-if/v-else) -->
+            <div v-if="riwayatPencarian.length > 0" class="riwayat-section">
+                <h4>Riwayat Pencarian</h4>
+                <div class="riwayat-list">
+                    <div 
+                        v-for="(item, index) in riwayatPencarian" 
+                        :key="index"
+                        class="riwayat-item"
+                        @click="cariUlang(item)"
+                    >
+                        <span class="riwayat-do">{{ item }}</span>
+                        <span class="riwayat-time"> diklik</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <span class="stat-number">{{ totalDO }}</span>
+                    <span class="stat-label">Total DO</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ doSelesai }}</span>
+                    <span class="stat-label">Selesai</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ doDalamPengiriman }}</span>
+                    <span class="stat-label">Dikirim</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/tracking-app.js"></script>
+</body>
+</html>

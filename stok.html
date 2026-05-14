@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stok Bahan Ajar - SITTA UT</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="dashboard-page">
+    <div id="app">
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                        <img src="assets/logo-ut.png" alt="Logo UT" class="logo">
+                        <span>SITTA UT</span>
+                    </a>
+                </div>
+                <div class="navbar-user" v-if="isLoggedIn">
+                    <span>{{ userName }}</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container main-content">
+            <div class="section-header">
+                <h2>Stok Bahan Ajar</h2>
+                <a href="index.html" class="btn-close" style="text-decoration: none;">Kembali</a>
+            </div>
+
+            <!-- Form Pencarian dan Filter -->
+            <div class="search-filter-section">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        v-model="searchQuery" 
+                        placeholder="Cari kode atau nama bahan ajar..." 
+                        @input="handleSearch"
+                    >
+                    <button class="btn-search">Cari</button>
+                </div>
+
+                <div class="filter-group">
+                    <label>Kategori:</label>
+                    <select v-model="selectedKategori" @change="handleFilter">
+                        <option value="">Semua Kategori</option>
+                        <option v-for="kategori in kategoriList" :key="kategori" :value="kategori">
+                            {{ kategori }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Urutkan:</label>
+                    <select v-model="sortBy" @change="handleSort">
+                        <option value="nama">Nama A-Z</option>
+                        <option value="namaDesc">Nama Z-A</option>
+                        <option value="stok">Stok Tertinggi</option>
+                        <option value="stokLow">Stok Terendah</option>
+                        <option value="harga">Harga Terendah</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Form Tambah Bahan Ajar (Modal) -->
+            <div class="action-bar">
+                <button class="btn-tambah" @click="showModal = true">+ Tambah Bahan Ajar</button>
+                <span class="total-data">Total: {{ filteredItems.length }} data</span>
+            </div>
+
+            <!-- Modal Tambah -->
+            <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Tambah Bahan Ajar</h2>
+                        <span class="close" @click="showModal = false">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="tambahBahanAjar">
+                            <div class="input-group">
+                                <label>Kode Bahan Ajar</label>
+                                <input type="text" v-model="formBaru.kode" required placeholder="Contoh: ADPU4431">
+                                <small v-if="errors.kode" class="error-text">{{ errors.kode }}</small>
+                            </div>
+                            <div class="input-group">
+                                <label>Nama Bahan Ajar</label>
+                                <input type="text" v-model="formBaru.nama" required placeholder="Contoh: Perilaku Organisasi">
+                                <small v-if="errors.nama" class="error-text">{{ errors.nama }}</small>
+                            </div>
+                            <div class="input-group">
+                                <label>Kategori</label>
+                                <select v-model="formBaru.kategori" required>
+                                    <option value="">Pilih Kategori</option>
+                                    <option v-for="kategori in kategoriList" :key="kategori" :value="kategori">
+                                        {{ kategori }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Stok</label>
+                                <input type="number" v-model.number="formBaru.stok" required min="0" placeholder="Jumlah stok">
+                            </div>
+                            <div class="input-group">
+                                <label>Harga (Rp)</label>
+                                <input type="number" v-model.number="formBaru.harga" required min="0" placeholder="Harga buku">
+                            </div>
+                            <button type="submit" class="btn-login">Simpan</button>
+                            <button type="button" class="btn-batal" @click="showModal = false">Batal</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Data Bahan Ajar -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th @click="sortBy = 'nama'" class="sortable">Kode <span v-if="sortBy === 'nama'">↑</span></th>
+                            <th @click="sortBy = 'nama'" class="sortable">Nama Bahan Ajar <span v-if="sortBy === 'nama'">↑</span></th>
+                            <th>Kategori</th>
+                            <th @click="sortBy = 'stok'" class="sortable">Stok <span v-if="sortBy === 'stok'">↑</span></th>
+                            <th @click="sortBy = 'harga'" class="sortable">Harga <span v-if="sortBy === 'harga'">↑</span></th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, index) in filteredItems" :key="item.kode">
+                            <td>{{ index + 1 }}</td>
+                            <td><strong>{{ item.kode }}</strong></td>
+                            <td>{{ item.nama }}</td>
+                            <td>
+                                <span class="badge-kategori">{{ item.kategori }}</span>
+                            </td>
+                            <td>{{ item.stok }}</td>
+                            <td>{{ formatRupiah(item.harga) }}</td>
+                            <td>
+                                <span 
+                                    class="status-stok" 
+                                    :class="getStatusClass(item.stok)"
+                                >
+                                    {{ getStatusText(item.stok) }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-action btn-edit" @click="editItem(item)">Edit</button>
+                                <button class="btn-action btn-delete" @click="hapusItem(item.kode)">Hapus</button>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredItems.length === 0">
+                            <td colspan="8" class="empty-data">
+                                <p v-if="searchQuery || selectedKategori">Data tidak ditemukan dengan filter yang dipilih.</p>
+                                <p v-else>Belum ada data bahan ajar.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Detail View (v-if/v-show example) -->
+            <div v-if="selectedItem" class="detail-panel">
+                <div class="detail-header">
+                    <h3>Detail Bahan Ajar</h3>
+                    <button class="btn-close" @click="selectedItem = null">Tutup</button>
+                </div>
+                <div class="detail-body">
+                    <div class="detail-row">
+                        <label>Kode:</label>
+                        <span>{{ selectedItem.kode }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Nama:</label>
+                        <span>{{ selectedItem.nama }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Kategori:</label>
+                        <span>{{ selectedItem.kategori }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Stok:</label>
+                        <span :class="{'text-red': selectedItem.stok < 50}">{{ selectedItem.stok }} unit</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Harga:</label>
+                        <span>{{ formatRupiah(selectedItem.harga) }}</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/stok-app.js"></script>
+</body>
+</html>
